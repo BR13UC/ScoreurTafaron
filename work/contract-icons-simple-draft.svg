@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="title desc">
+  <title id="title">Variantes simples des pictogrammes Tafaron</title>
+  <desc id="desc">Quatre variantes minimalistes pour Réussite, Pas de cœur, Pas le roi de cœur et Joker.</desc>
+  <defs>
+    <style>
+      .card{fill:#fff;stroke:#172039;stroke-width:5;stroke-linejoin:round}
+      .line{fill:none;stroke:#172039;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+      .red{stroke:#ff5d7a}.violet{stroke:#5b3df5}.label{font:700 24px system-ui,sans-serif;fill:#172039}.code{font:700 16px system-ui,sans-serif;fill:#7a849b;letter-spacing:3px}
+    </style>
+  </defs>
+  <rect width="1280" height="420" fill="#f7f8fc"/>
+
+  <!-- Réussite : quatre colonnes très simples -->
+  <g transform="translate(35 35)">
+    <rect width="285" height="350" rx="24" fill="#fff" stroke="#dce0f2" stroke-width="2"/>
+    <g transform="translate(74 68)">
+      <rect class="card violet" x="0" y="34" width="38" height="126" rx="5"/>
+      <rect class="card violet" x="47" y="22" width="38" height="138" rx="5"/>
+      <rect class="card violet" x="94" y="10" width="38" height="150" rx="5"/>
+      <rect class="card violet" x="141" y="0" width="38" height="160" rx="5"/>
+    </g>
+    <text class="label" x="24" y="280">Réussite</text><text class="code" x="24" y="308">R</text>
+  </g>
+
+  <!-- Cœur : une carte simple et une seule barre rouge -->
+  <g transform="translate(335 35)">
+    <rect width="285" height="350" rx="24" fill="#fff" stroke="#dce0f2" stroke-width="2"/>
+    <g transform="translate(105 62)">
+      <rect class="card" width="76" height="150" rx="8"/>
+      <text x="12" y="28" font-family="system-ui" font-size="20" font-weight="900" fill="#ff5d7a">10</text>
+      <path d="M38 83 C22 66 9 85 38 108 C67 85 54 66 38 83Z" fill="#ff5d7a"/>
+      <path class="line red" d="M-18 -16L94 166"/>
+    </g>
+    <text class="label" x="24" y="280">Pas de cœur</text><text class="code" x="24" y="308">C</text>
+  </g>
+
+  <!-- Roi de cœur : même carte simple avec K -->
+  <g transform="translate(635 35)">
+    <rect width="285" height="350" rx="24" fill="#fff" stroke="#dce0f2" stroke-width="2"/>
+    <g transform="translate(105 62)">
+      <rect class="card" width="76" height="150" rx="8"/>
+      <text x="12" y="28" font-family="system-ui" font-size="20" font-weight="900" fill="#ff5d7a">K</text>
+      <path d="M38 83 C22 66 9 85 38 108 C67 85 54 66 38 83Z" fill="#ff5d7a"/>
+      <path class="line red" d="M-18 -16L94 166"/>
+    </g>
+    <text class="label" x="24" y="280">Pas le roi de cœur</text><text class="code" x="24" y="308">K</text>
+  </g>
+
+  <!-- Joker : une seule carte très lisible -->
+  <g transform="translate(935 35)">
+    <rect width="285" height="350" rx="24" fill="#fff" stroke="#dce0f2" stroke-width="2"/>
+    <g transform="translate(105 62)">
+      <rect class="card" width="76" height="150" rx="8"/>
+      <text x="12" y="28" font-family="system-ui" font-size="20" font-weight="900" fill="#5b3df5">J</text>
+      <path class="line violet" d="M21 86c10-22 24-22 34 0-10 22-24 22-34 0Z"/>
+      <path class="line violet" d="M38 69v34M21 86h34"/>
+      <text x="17" y="128" font-family="system-ui" font-size="12" font-weight="900" fill="#5b3df5">JOKER</text>
+    </g>
+    <text class="label" x="24" y="280">Joker</text><text class="code" x="24" y="308">J</text>
+  </g>
+</svg>

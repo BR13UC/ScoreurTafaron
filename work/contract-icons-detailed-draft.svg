@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="460" viewBox="0 0 1280 460" role="img" aria-labelledby="title desc">
+  <title id="title">Variantes détaillées des pictogrammes Tafaron</title>
+  <desc id="desc">Quatre icônes de cartes détaillées pour Réussite, Pas de cœur, Pas le roi de cœur et Joker.</desc>
+  <defs>
+    <style>
+      .card{fill:#fff;stroke:#172039;stroke-width:4;stroke-linejoin:round}
+      .line{fill:none;stroke:#172039;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+      .detail{fill:none;stroke:#8290ad;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+      .red{stroke:#ff5d7a}.violet{stroke:#5b3df5}.gold{stroke:#e5a400}
+      .red-fill{fill:#ff5d7a}.violet-fill{fill:#5b3df5}.gold-fill{fill:#e5a400}
+      .label{font:700 24px system-ui,sans-serif;fill:#172039}.code{font:700 16px system-ui,sans-serif;fill:#7a849b;letter-spacing:3px}
+    </style>
+    <g id="heart"><path d="M0 7 C-15 -8 -28 10 0 31 C28 10 15 -8 0 7Z"/></g>
+    <g id="card-back"><rect class="card" width="48" height="72" rx="6"/><rect x="7" y="7" width="34" height="58" rx="3" fill="#eef0f7" stroke="#8290ad" stroke-width="2"/><path class="detail" d="M11 15h26M11 25h26M11 35h26M11 45h26M11 55h26"/></g>
+    <g id="heart-card"><rect class="card" width="92" height="134" rx="8"/><text x="10" y="25" font-family="system-ui" font-size="19" font-weight="900" fill="#ff5d7a">10</text><use href="#heart" transform="translate(46 72) scale(.85)" fill="#ff5d7a"/><path class="detail" d="M10 43h15M67 91h15"/></g>
+    <g id="king-card"><rect class="card" width="92" height="134" rx="8"/><text x="10" y="25" font-family="system-ui" font-size="19" font-weight="900" fill="#ff5d7a">K</text><path class="line red" d="M29 75l10-17 8 14 9-14 9 17-7 30H36z"/><circle cx="50" cy="78" r="6" fill="#ff5d7a"/><path class="detail" d="M35 112h30M10 43h15M67 91h15"/></g>
+    <g id="joker-card"><rect class="card" width="92" height="134" rx="8"/><text x="10" y="25" font-family="system-ui" font-size="19" font-weight="900" fill="#5b3df5">J</text><path class="line violet" d="M27 74c9-18 19-18 28 0-9 18-19 18-28 0Z"/><path class="line violet" d="M41 59v30M27 74h28"/><circle cx="41" cy="74" r="6" fill="#5b3df5"/><path class="detail" d="M10 43h15M67 91h15"/><text x="22" y="119" font-family="system-ui" font-size="11" font-weight="900" fill="#5b3df5">JOKER</text></g>
+  </defs>
+  <rect width="1280" height="460" fill="#f7f8fc"/>
+
+  <!-- Réussite : quatre colonnes de cartes organisées -->
+  <g transform="translate(35 35)">
+    <rect width="285" height="390" rx="24" fill="#fff" stroke="#dce0f2" stroke-width="2"/>
+    <g transform="translate(57 104) scale(.68)">
+      <g transform="translate(0 40)"><use href="#card-back"/><use href="#card-back" transform="translate(4 -22)"/><path class="detail" d="M13 25h18M13 37h18"/></g>
+      <g transform="translate(46 25)"><use href="#card-back"/><use href="#card-back" transform="translate(4 -22)"/><use href="#card-back" transform="translate(8 -44)"/><path class="detail" d="M13 25h18M13 37h18"/></g>
+      <g transform="translate(92 10)"><use href="#card-back"/><use href="#card-back" transform="translate(4 -22)"/><use href="#card-back" transform="translate(8 -44)"/><use href="#card-back" transform="translate(12 -66)"/><path class="detail" d="M13 25h18M13 37h18"/></g>
+      <g transform="translate(138 0)"><use href="#card-back"/><use href="#card-back" transform="translate(4 -22)"/><use href="#card-back" transform="translate(8 -44)"/><use href="#card-back" transform="translate(12 -66)"/><use href="#card-back" transform="translate(16 -88)"/><path class="detail" d="M13 25h18M13 37h18"/></g>
+    </g>
+    <text class="label" x="24" y="322">Réussite</text><text class="code" x="24" y="350">R</text>
+  </g>
+
+  <!-- Cœur : pile et carte de cœur détaillée -->
+  <g transform="translate(335 35)">
+    <rect width="285" height="390" rx="24" fill="#fff" stroke="#dce0f2" stroke-width="2"/>
+    <g transform="translate(96 78)"><rect class="card" x="20" y="22" width="92" height="134" rx="8"/><rect class="card" x="10" y="11" width="92" height="134" rx="8"/><use href="#heart-card"/><path class="line red" d="M-18 -15L112 150"/></g>
+    <text class="label" x="24" y="322">Pas de cœur</text><text class="code" x="24" y="350">C</text>
+  </g>
+
+  <!-- Roi : pile et carte de figure détaillée -->
+  <g transform="translate(635 35)">
+    <rect width="285" height="390" rx="24" fill="#fff" stroke="#dce0f2" stroke-width="2"/>
+    <g transform="translate(96 78)"><rect class="card" x="20" y="22" width="92" height="134" rx="8"/><rect class="card" x="10" y="11" width="92" height="134" rx="8"/><use href="#king-card"/><path class="line red" d="M-18 -15L112 150"/></g>
+    <text class="label" x="24" y="322">Pas le roi de cœur</text><text class="code" x="24" y="350">K</text>
+  </g>
+
+  <!-- Joker : carte complète avec enseigne centrale -->
+  <g transform="translate(935 35)">
+    <rect width="285" height="390" rx="24" fill="#fff" stroke="#dce0f2" stroke-width="2"/>
+    <g transform="translate(96 78)"><use href="#joker-card"/><path class="detail violet" d="M25 39h32M25 101h32"/></g>
+    <text class="label" x="24" y="322">Joker</text><text class="code" x="24" y="350">J</text>
+  </g>
+</svg>
