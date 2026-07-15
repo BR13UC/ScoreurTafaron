@@ -124,6 +124,35 @@ export interface GameSnapshot {
   game: Game;
   scores: ScoreMap;
   remainingRounds: number;
+  currentRoundNumber: number;
+  totalRounds: number;
+}
+
+export interface JoinContext {
+  mode: 'join' | 'recover' | 'closed';
+  gameName?: string;
+  players: Array<Pick<Player, 'id' | 'name'>>;
+}
+
+export type RecoveryRequestState = 'pending' | 'approved' | 'rejected' | 'expired';
+
+export interface RecoveryRequestCreated {
+  requestId: string;
+  secret: string;
+  expiresAt: string;
+}
+
+export interface RecoveryRequestStatus {
+  requestId: string;
+  state: RecoveryRequestState;
+  playerName: string;
+  expiresAt: string;
+}
+
+export interface RecoveryAdminRequest extends Omit<RecoveryRequestStatus, 'state'> {
+  playerId: string;
+  state: Extract<RecoveryRequestState, 'pending' | 'approved'>;
+  createdAt: string;
 }
 
 export interface PlayerView {

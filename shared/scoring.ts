@@ -11,8 +11,22 @@ export function effectiveContract(round: Round): EffectiveContractCode {
 
 const value = (map: Record<string, number> | undefined, id: string) => map?.[id] ?? 0;
 
+export function completeRoundResult(round: Round, result: RoundResult, game: Game): RoundResult {
+  const contract = effectiveContract(round); const completed = { ...result };
+  const completeMap = (values: Record<string, number> | undefined, expected: number) => {
+    const explicit = game.players.map((player) => values?.[player.id]).filter((item): item is number => item !== undefined);
+    if (explicit.some((item) => !Number.isInteger(item) || item < 0) || explicit.reduce((sum, item) => sum + item, 0) !== expected) return values;
+    return Object.fromEntries(game.players.map((player) => [player.id, values?.[player.id] ?? 0]));
+  };
+  if (contract === 'C' || contract === 'T') completed.heartsByPlayer = completeMap(result.heartsByPlayer, game.settings.deck.heartsInPlay);
+  if (contract === 'D' || contract === 'T') completed.queensByPlayer = completeMap(result.queensByPlayer, game.settings.deck.queensInPlay);
+  if (contract === 'P' || contract === 'T') completed.tricksByPlayer = completeMap(result.tricksByPlayer, game.settings.deck.cardsPerPlayer);
+  return completed;
+}
+
 export function validateRoundResult(round: Round, result: RoundResult, game: Game): string[] {
   const contract = effectiveContract(round);
+  result = completeRoundResult(round, result, game);
   const errors: string[] = [];
   const ids = new Set(game.players.map((player) => player.id));
   const validateTotal = (label: string, values: Record<string, number> | undefined, expected: number) => {

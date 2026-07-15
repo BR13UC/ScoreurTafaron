@@ -14,13 +14,21 @@ export function StatusPill({ children, tone = 'neutral' }: { children: React.Rea
 const CONTRACT_ICON_IMAGES: Record<ContractCode, string> = { R: iconR, C: iconC, D: iconD, K: iconK, P: iconP, L: iconL, T: iconT, J: iconJ };
 export function ContractIcon({ code, className = '' }: { code: ContractCode; className?: string }) { return <img className={`contract-art contract-art-${code} ${className}`} src={CONTRACT_ICON_IMAGES[code]} alt="" aria-hidden="true" />; }
 
-export function ContractPicker({ options = CONTRACT_CODES as unknown as ContractCode[], available = options, used = [], onChoose }: { options?: ContractCode[]; available?: ContractCode[]; used?: ContractCode[]; onChoose: (contract: ContractCode, joker?: Exclude<ContractCode, 'J'>) => void }) {
-  const [joker, setJoker] = useState<Exclude<ContractCode, 'J'> | ''>('');
-  return <div className="contract-grid">{options.map((code) => {
+export function ContractPicker({ options = CONTRACT_CODES as unknown as ContractCode[], available = options, used = [], onChoose, className = '' }: { options?: ContractCode[]; available?: ContractCode[]; used?: ContractCode[]; onChoose: (contract: ContractCode, joker?: Exclude<ContractCode, 'J'>) => void; className?: string }) {
+  const [jokerSelecting, setJokerSelecting] = useState(false);
+  const visibleCount = jokerSelecting ? options.filter((item) => item !== 'J').length + 1 : options.length;
+  const gridStyle = { '--contract-rows-wide': Math.ceil(visibleCount / 4), '--contract-rows-mobile': Math.ceil(visibleCount / 2) } as React.CSSProperties;
+  if (jokerSelecting) {
+    return <div className={`contract-grid ${className} joker-contract-grid`.trim()} style={gridStyle}>
+      {options.filter((item) => item !== 'J').map((item) => <button type="button" className="contract-card joker-choice" key={item} onClick={() => onChoose('J', item as Exclude<ContractCode, 'J'>)}><ContractIcon code={item} /><strong>{CONTRACT_LABELS[item]}</strong></button>)}
+      <button type="button" className="contract-card joker-back" onClick={() => setJokerSelecting(false)}>← Retour</button>
+    </div>;
+  }
+  return <div className={`contract-grid ${className}`.trim()} style={gridStyle}>{options.map((code) => {
     const disabled = used.includes(code) || !available.includes(code);
     return code === 'J'
-      ? <div className={`contract-card joker ${disabled ? 'disabled' : ''}`} key={code} aria-disabled={disabled}><ContractIcon code={code} /><strong>{CONTRACT_LABELS[code]}</strong><small className="contract-code">J</small><select disabled={disabled} value={joker} onChange={(event) => setJoker(event.target.value as Exclude<ContractCode, 'J'>)}><option value="">Contrat imité…</option>{available.filter((item) => item !== 'J').map((item) => <option value={item} key={item}>{CONTRACT_LABELS[item]} ({item})</option>)}</select><button disabled={disabled || !joker} onClick={() => joker && onChoose('J', joker)}>Choisir</button></div>
-      : <button className={`contract-card ${disabled ? 'disabled' : ''}`} disabled={disabled} key={code} onClick={() => onChoose(code)}><ContractIcon code={code} /><strong>{CONTRACT_LABELS[code]}</strong><small className="contract-code">{code}</small></button>;
+      ? <button type="button" className={`contract-card joker ${disabled ? 'disabled' : ''}`} disabled={disabled} key={code} onClick={() => setJokerSelecting(true)}><ContractIcon code={code} /><strong>{CONTRACT_LABELS[code]}</strong></button>
+      : <button className={`contract-card ${disabled ? 'disabled' : ''}`} disabled={disabled} key={code} onClick={() => onChoose(code)}><ContractIcon code={code} /><strong>{CONTRACT_LABELS[code]}</strong></button>;
   })}</div>;
 }
 
@@ -52,10 +60,10 @@ export function ScoreMatrix({ game, round, onCell }: { game: Game; round: Round;
   const values = (playerId: string) => submissions[playerId]?.values ?? {};
   const numberRow = (label: string, field: 'hearts' | 'queens' | 'tricks', expected: number, max: number) => {
     const entered = game.players.reduce((sum, player) => sum + (values(player.id)[field] ?? 0), 0);
-    const complete = game.players.every((player) => Number.isInteger(values(player.id)[field]));
-    const valid = complete && entered === expected;
+    const explicitValid = game.players.every((player) => values(player.id)[field] === undefined || Number.isInteger(values(player.id)[field]));
+    const valid = explicitValid && entered === expected;
     return <MatrixRow label={label} expected={`${entered} / ${expected}`} valid={valid}>
-      {game.players.map((player) => { const submission = submissions[player.id]; return <div className="matrix-cell" key={player.id}><span className="cell-value" title={submission ? `${submission.source === 'player' ? 'joueur' : 'admin'} · ${new Date(submission.updatedAt).toLocaleTimeString()}` : undefined}>{values(player.id)[field] ?? '—'}</span><small className="cell-source">{submission?.source === 'admin' ? 'admin' : submission ? 'joueur' : ''}</small><div className="value-buttons">{Array.from({ length: max + 1 }, (_, value) => <button className={values(player.id)[field] === value ? 'selected' : ''} key={value} onClick={() => onCell(player.id, field, value)}>{value}</button>)}</div></div>; })}
+      {game.players.map((player) => { const submission = submissions[player.id]; const inferred = valid && values(player.id)[field] === undefined; return <div className="matrix-cell" key={player.id}><span className="cell-value" title={submission ? `${submission.source === 'player' ? 'joueur' : 'admin'} · ${new Date(submission.updatedAt).toLocaleTimeString()}` : inferred ? 'Valeur déduite automatiquement' : undefined}>{inferred ? 0 : values(player.id)[field] ?? '—'}</span><small className="cell-source">{inferred ? 'déduit' : submission?.source === 'admin' ? 'admin' : submission ? 'joueur' : ''}</small><div className="value-buttons">{Array.from({ length: max + 1 }, (_, value) => <button className={(inferred ? 0 : values(player.id)[field]) === value ? 'selected' : ''} key={value} onClick={() => onCell(player.id, field, value)}>{value}</button>)}</div></div>; })}
     </MatrixRow>;
   };
   const exclusiveRow = (label: string, field: 'kingOfHearts' | 'lastTrick') => {
@@ -66,8 +74,10 @@ export function ScoreMatrix({ game, round, onCell }: { game: Game; round: Round;
   };
   const rankRow = (rank: 'first' | 'second' | 'other', label: string) => {
     const selected = game.players.filter((player) => values(player.id).rank === rank).length;
-    return <MatrixRow label={label} expected={`${selected} / 1`} valid={selected === 1}>
-      {game.players.map((player) => { const submission = submissions[player.id]; return <div className="matrix-cell" key={player.id}><button className={`exclusive-button ${values(player.id).rank === rank ? 'selected' : ''}`} title={submission ? `${submission.source === 'player' ? 'joueur' : 'admin'} · ${new Date(submission.updatedAt).toLocaleTimeString()}` : undefined} onClick={() => onCell(player.id, 'rank', rank)}>{values(player.id).rank === rank ? '✓' : '—'}</button><small className="cell-source">{submission?.source === 'admin' ? 'admin' : submission ? 'joueur' : ''}</small></div>; })}
+    const firstAndSecondKnown = game.players.filter((player) => values(player.id).rank === 'first').length === 1 && game.players.filter((player) => values(player.id).rank === 'second').length === 1;
+    const expected = rank === 'other' ? game.players.length - 2 : 1; const effectiveSelected = rank === 'other' && firstAndSecondKnown ? expected : selected;
+    return <MatrixRow label={label} expected={`${effectiveSelected} / ${expected}`} valid={effectiveSelected === expected}>
+      {game.players.map((player) => { const submission = submissions[player.id]; const inferred = rank === 'other' && firstAndSecondKnown && values(player.id).rank === undefined; const isSelected = values(player.id).rank === rank || inferred; return <div className="matrix-cell" key={player.id}><button className={`exclusive-button ${isSelected ? 'selected' : ''}`} title={submission ? `${submission.source === 'player' ? 'joueur' : 'admin'} · ${new Date(submission.updatedAt).toLocaleTimeString()}` : inferred ? 'Rang déduit automatiquement' : undefined} onClick={() => onCell(player.id, 'rank', rank)}>{isSelected ? '✓' : '—'}</button><small className="cell-source">{inferred ? 'déduit' : submission?.source === 'admin' ? 'admin' : submission ? 'joueur' : ''}</small></div>; })}
     </MatrixRow>;
   };
   if (!effective) return null;

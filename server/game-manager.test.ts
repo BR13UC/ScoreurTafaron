@@ -1,13 +1,13 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GameManager } from './game-manager.js';
 import { GameStorage } from './storage.js';
 
 let directory: string; let manager: GameManager;
 beforeEach(async () => { directory = await mkdtemp(path.join(os.tmpdir(), 'tafaron-')); manager = new GameManager(new GameStorage(directory)); await manager.init(); });
-afterEach(async () => rm(directory, { recursive: true, force: true }));
+afterEach(async () => { vi.useRealTimers(); await rm(directory, { recursive: true, force: true }); });
 
 describe('cycle de vie d’une partie', () => {
   it('archive la partie active lors de la création suivante et peut la réactiver', async () => {
@@ -83,6 +83,65 @@ describe('cycle de vie d’une partie', () => {
     const chooser = manager.get(game.id).rounds[0].chooserPlayerId; await manager.selectContract(game.id, chooser, 'K'); await manager.beginScoring(game.id);
     const reporter = manager.get(game.id).players[0]; await manager.submitPlayer(game.id, reporter.id, { kingOfHearts: true });
     expect(manager.get(game.id).rounds[0].status).toBe('countdown'); expect(manager.get(game.id).rounds[0].result?.kingOfHeartsPlayerId).toBe(reporter.id);
+  });
+  it('déduit les zéros et les rangs Autre avant le compte à rebours', async () => {
+    const game = (await manager.create('Déductions', 3)).game;
+    for (const name of ['A', 'B', 'C']) await manager.addLocalPlayer(game.id, name);
+    await manager.setSetupStep(game.id, 'cards'); await manager.setSetupStep(game.id, 'ready'); await manager.start(game.id);
+    const players = manager.get(game.id).players; const chooser = players[0].id;
+    await manager.selectContract(game.id, chooser, 'R'); await manager.beginScoring(game.id);
+    await manager.submitPlayer(game.id, players[0].id, { rank: 'first' }); await manager.submitPlayer(game.id, players[1].id, { rank: 'second' });
+    expect(manager.get(game.id).rounds[0].status).toBe('countdown'); await manager.cancelCountdown(game.id);
+  });
+  it('déduit les zéros sans attendre une saisie explicite de chaque joueur', async () => {
+    const game = (await manager.create('Zéros', 3)).game;
+    for (const name of ['A', 'B', 'C']) await manager.addLocalPlayer(game.id, name);
+    await manager.setSetupStep(game.id, 'cards'); await manager.setSetupStep(game.id, 'ready'); await manager.start(game.id);
+    const round = manager.get(game.id).rounds[0]; await manager.selectContract(game.id, round.chooserPlayerId, 'C'); await manager.beginScoring(game.id);
+    await manager.submitPlayer(game.id, game.players[0].id, { hearts: game.settings.deck.heartsInPlay });
+    expect(manager.get(game.id).rounds[0].result?.heartsByPlayer).toEqual(Object.fromEntries(game.players.map((player, index) => [player.id, index === 0 ? game.settings.deck.heartsInPlay : 0])));
+    expect(manager.get(game.id).rounds[0].status).toBe('countdown'); await manager.cancelCountdown(game.id);
+  });
+  it('autorise le Joker à imiter un contrat actif déjà utilisé mais pas un contrat désactivé', async () => {
+    const game = (await manager.create('Joker', 3)).game;
+    for (const name of ['A', 'B', 'C']) await manager.addLocalPlayer(game.id, name);
+    await manager.setSetupStep(game.id, 'cards'); await manager.setSetupStep(game.id, 'ready'); await manager.start(game.id);
+    const current = manager.get(game.id).rounds[0]; manager.get(game.id).rounds.unshift({ ...current, id: 'used', status: 'validated', contract: 'C', scoreDelta: {}, validatedAt: new Date().toISOString() });
+    await manager.selectContract(game.id, current.chooserPlayerId, 'J', 'C'); expect(current.jokerContract).toBe('C');
+    const disabledGame = (await manager.create('Joker désactivé', 3)).game;
+    for (const name of ['D', 'E', 'F']) await manager.addLocalPlayer(disabledGame.id, name);
+    await manager.updateSettings(disabledGame.id, { enabledContracts: ['J', 'R'] }); await manager.setSetupStep(disabledGame.id, 'cards'); await manager.setSetupStep(disabledGame.id, 'ready'); await manager.start(disabledGame.id);
+    await expect(manager.selectContract(disabledGame.id, disabledGame.rounds[0].chooserPlayerId, 'J', 'C')).rejects.toThrow(/invalide/);
+  });
+  it('récupère une session téléphone, invalide l’ancien jeton et reste à usage unique', async () => {
+    const game = (await manager.create('Récupération', 3)).game; const alice = await manager.join(game.id, 'Alice');
+    await manager.addLocalPlayer(game.id, 'Bob'); await manager.addLocalPlayer(game.id, 'Cara');
+    await manager.setSetupStep(game.id, 'cards'); await manager.setSetupStep(game.id, 'ready'); await manager.start(game.id);
+    const request = manager.createRecoveryRequest(game.id, alice.player.id);
+    expect(() => manager.createRecoveryRequest(game.id, alice.player.id)).toThrow(/déjà active/);
+    manager.decideRecoveryRequest(game.id, request.requestId, 'approved'); const claimed = await manager.claimRecoveryRequest(game.id, request.requestId, request.secret);
+    expect(() => manager.authenticate(game.id, alice.token)).toThrow(/invalide/); expect(manager.authenticate(game.id, claimed.token).player.id).toBe(alice.player.id);
+    await expect(manager.claimRecoveryRequest(game.id, request.requestId, request.secret)).rejects.toThrow(/déjà été utilisée/);
+  });
+  it('convertit un joueur local après approbation et expose les refus et expirations', async () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-01-01T12:00:00Z'));
+    const game = (await manager.create('Récupération locale', 3)).game;
+    for (const name of ['A', 'B', 'C']) await manager.addLocalPlayer(game.id, name);
+    await manager.setSetupStep(game.id, 'cards'); await manager.setSetupStep(game.id, 'ready'); await manager.start(game.id);
+    const player = manager.get(game.id).players[0]; const refused = manager.createRecoveryRequest(game.id, player.id);
+    manager.decideRecoveryRequest(game.id, refused.requestId, 'rejected'); expect(manager.recoveryStatus(game.id, refused.requestId, refused.secret).state).toBe('rejected');
+    const expired = manager.createRecoveryRequest(game.id, player.id); vi.advanceTimersByTime(5 * 60_000 + 1);
+    expect(manager.recoveryStatus(game.id, expired.requestId, expired.secret).state).toBe('expired');
+    const accepted = manager.createRecoveryRequest(game.id, player.id); manager.decideRecoveryRequest(game.id, accepted.requestId, 'approved'); const claimed = await manager.claimRecoveryRequest(game.id, accepted.requestId, accepted.secret);
+    expect(manager.authenticate(game.id, claimed.token).player.kind).toBe('phone');
+  });
+  it('calcule le compteur de manche sans modifier les sauvegardes', async () => {
+    const game = (await manager.create('Compteur', 3)).game; expect(manager.snapshot(game)).toMatchObject({ currentRoundNumber: 0, totalRounds: 24 });
+    for (const name of ['A', 'B', 'C']) await manager.addLocalPlayer(game.id, name);
+    await manager.setSetupStep(game.id, 'cards'); await manager.setSetupStep(game.id, 'ready'); await manager.start(game.id);
+    expect(manager.snapshot(manager.get(game.id))).toMatchObject({ currentRoundNumber: 1, totalRounds: 24 });
+    await manager.finish(game.id); expect(manager.snapshot(manager.get(game.id)).currentRoundNumber).toBe(0);
+    manager.get(game.id).finishedReason = 'complete'; expect(manager.snapshot(manager.get(game.id)).currentRoundNumber).toBe(24);
   });
   it('supprime uniquement une partie déjà archivée', async () => {
     const archived = (await manager.create('À supprimer', 3)).game;

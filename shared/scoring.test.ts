@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createGame } from './game.js';
-import { chooserSucceeded, computeRoundScore, recomputeGameScores, validateRoundResult } from './scoring.js';
+import { chooserSucceeded, completeRoundResult, computeRoundScore, recomputeGameScores, validateRoundResult } from './scoring.js';
 import type { ContractCode, Game, Round, RoundResult } from './types.js';
 
 let game: Game;
@@ -19,6 +19,19 @@ describe('calcul des scores', () => {
     const round = makeRound('C'); const valid: RoundResult = { heartsByPlayer: { a: 0, b: 2, c: 2, d: 3, e: 3 } };
     expect(validateRoundResult(round, valid, game)).toEqual([]); expect(computeRoundScore(round, valid, game.settings, game.players).a).toBe(-25);
     expect(validateRoundResult(round, { heartsByPlayer: { a: 0, b: 1, c: 1, d: 1, e: 1 } }, game)[0]).toMatch(/doit être 10/);
+  });
+  it('complète les zéros seulement lorsque le total explicite est exact', () => {
+    const round = makeRound('C'); const exact = { heartsByPlayer: { a: 10 } }; const incomplete = { heartsByPlayer: { a: 9 } };
+    expect(completeRoundResult(round, exact, game).heartsByPlayer).toEqual({ a: 10, b: 0, c: 0, d: 0, e: 0 });
+    expect(validateRoundResult(round, exact, game)).toEqual([]);
+    expect(completeRoundResult(round, incomplete, game).heartsByPlayer).toEqual({ a: 9 });
+    expect(validateRoundResult(round, incomplete, game)[0]).toMatch(/incomplète/);
+  });
+  it('complète chaque ligne du Tafaron indépendamment', () => {
+    const round = makeRound('T'); const result: RoundResult = { heartsByPlayer: { a: 10 }, queensByPlayer: { b: 4 }, tricksByPlayer: { c: 8 }, kingOfHeartsPlayerId: 'd', lastTrickPlayerId: 'e' };
+    const completed = completeRoundResult(round, result, game);
+    expect(completed.heartsByPlayer?.b).toBe(0); expect(completed.queensByPlayer?.a).toBe(0); expect(completed.tricksByPlayer?.a).toBe(0);
+    expect(validateRoundResult(round, completed, game)).toEqual([]);
   });
   it('calcule dames, roi, plis et dernier pli du Tafaron', () => {
     const round = makeRound('T'); const result: RoundResult = { heartsByPlayer: { a: 0, b: 10, c: 0, d: 0, e: 0 }, queensByPlayer: { a: 0, b: 4, c: 0, d: 0, e: 0 }, tricksByPlayer: { a: 0, b: 8, c: 0, d: 0, e: 0 }, kingOfHeartsPlayerId: 'b', lastTrickPlayerId: 'b' };

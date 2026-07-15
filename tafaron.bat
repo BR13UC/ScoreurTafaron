@@ -43,11 +43,16 @@ if not exist node_modules\@esbuild\win32-x64 (
 
 if !DID_INSTALL! EQU 1 goto :compile
 if not exist dist\client\index.html goto :compile
+call node scripts\build-state.mjs check
+if errorlevel 2 goto :compile
+if errorlevel 1 goto :error
 goto :start
 
 :compile
   echo Compilation de Tafaron...
   call npm run build
+  if errorlevel 1 goto :error
+  call node scripts\build-state.mjs mark
   if errorlevel 1 goto :error
 
 :start
